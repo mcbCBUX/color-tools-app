@@ -25,127 +25,272 @@
     <button onclick="showTab('gallery')">Gradient Gallery</button>
   </div>
 
-  <!-- Tab 1: Multiple Color Swatches -->
+<!-- Tab 1: Multiple Color Swatches -->
 <div id="swatch" class="tab active">
   <h2>Color Swatches</h2>
   <div class="input-container">
     <label for="colorInput">Enter a list of colors (HEX or RGBA):</label>
-    <input type="text" id="colorInput" placeholder='e.g. ["#fdab33", [0.2, 0.6, 0.8, 0.7], "#33fdab", [0.8, 0.2, 0.5, 1.0]]'>
+    <input
+      type="text"
+      id="colorInput"
+      placeholder="e.g. #fdab33, (0.2, 0.6, 0.8, 0.7), #33fdab, (0.8, 0.2, 0.5, 1.0)">
     <button onclick="generateSwatches()">Generate Swatches</button>
   </div>
   <p class="help-text">
     Examples of valid formats:<br>
-    Single: <code>"#fdab33"</code> or <code>[0.2, 0.6, 0.8, 0.7]</code><br>
-    Multiple: <code>["#fdab33", [0.2, 0.6, 0.8, 0.7], "#33fdab"]</code>
+    Single: <code>#fdab33</code> or <code>(0.2, 0.6, 0.8, 0.7)</code><br>
+    Multiple: <code>#fdab33, (0.2, 0.6, 0.8, 0.7), #33fdab, (0.8, 0.2, 0.5, 1.0)</code>
   </p>
   <div id="swatchContainer" style="display: flex; flex-wrap: wrap;"></div>
 </div>
 
 <script>
   function generateSwatches() {
-    const colorInput = document.getElementById('colorInput').value;
+    const rawInput = document.getElementById('colorInput').value;
     const swatchContainer = document.getElementById('swatchContainer');
     swatchContainer.innerHTML = '';
 
-    let colors;
     try {
-      colors = JSON.parse(colorInput);
-      if (!Array.isArray(colors)) {
-        throw new Error("Input must be a JSON array.");
-      }
+      const colors = [];
+      const regex = /#(?:[0-9a-fA-F]{3}){1,2}|rgba?\s*\(([^)]+)\)|\(([^)]+)\)/g;
+
+      const matches = rawInput.match(regex);
+      matches.forEach(match => {
+        match = match.trim();
+        if (match.startsWith('#')) {
+          colors.push(match);
+        } else {
+          const inner = match.replace(/[()]/g, '');
+          const rgbaValues = inner.split(',').map(v => parseFloat(v.trim()));
+          if (rgbaValues.length === 4 && rgbaValues.every(v => !isNaN(v))) {
+            colors.push(rgbaValues);
+          }
+        }
+      });
+
+      if (!colors.length) throw new Error("No valid colors found.");
+
+      colors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'swatch';
+        swatch.style.backgroundColor = Array.isArray(color)
+          ? `rgba(${color.join(',')})`
+          : color;
+
+        const label = document.createElement('div');
+        label.style.textAlign = 'center';
+        label.style.marginTop = '5px';
+        label.style.fontSize = '0.9em';
+        label.innerText = Array.isArray(color)
+          ? `rgba(${color.join(',')})`
+          : color;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.margin = '10px';
+        wrapper.style.textAlign = 'center';
+        wrapper.appendChild(swatch);
+        wrapper.appendChild(label);
+
+        swatchContainer.appendChild(wrapper);
+      });
+
     } catch (error) {
-      swatchContainer.innerHTML = '<p style="color: red;">Invalid input format. Please enter a valid JSON array like ["#fdab33", [0.2, 0.6, 0.8, 0.7]].</p>';
-      return;
+      swatchContainer.innerHTML = '<p style="color: red;">Could not parse your input. Try using HEX codes and RGBA in parentheses.</p>';
     }
-
-    colors.forEach(color => {
-      let bgColor = '';
-      let labelText = '';
-
-      if (Array.isArray(color) && color.length === 4) {
-        // Normalize RGBA values: convert 0–1 floats to 0–255 if needed
-        const rgba = color.map((v, i) => i < 3 ? Math.round(v * 255) : v);
-        bgColor = `rgba(${rgba.join(',')})`;
-        labelText = `rgba(${rgba.join(',')})`;
-      } else if (typeof color === 'string') {
-        bgColor = color;
-        labelText = color;
-      } else {
-        labelText = 'Invalid color';
-        bgColor = '#ccc';
-      }
-
-      const swatch = document.createElement('div');
-      swatch.className = 'swatch';
-      swatch.style.backgroundColor = bgColor;
-
-      const label = document.createElement('div');
-      label.style.textAlign = 'center';
-      label.style.marginTop = '5px';
-      label.style.fontSize = '0.9em';
-      label.innerText = labelText;
-
-      const wrapper = document.createElement('div');
-      wrapper.style.margin = '10px';
-      wrapper.style.textAlign = 'center';
-      wrapper.appendChild(swatch);
-      wrapper.appendChild(label);
-
-      swatchContainer.appendChild(wrapper);
-    });
   }
 </script>
 
 
-  <!-- Tab 2: RGBA to HEX Converter -->
-  <div id="converter" class="tab">
-    <h2>RGBA to HEX Converter</h2>
-    <input type="text" id="rgbaInput" placeholder="e.g. rgba(0, 153, 102, 1)">
-    <button onclick="convertToHex()">Convert</button>
-    <p id="hexOutput"></p>
+<!-- Tab 2: RGBA ↔ HTML Converter -->
+<div id="converterTab" class="tab">
+  <h2>RGBA ↔ HTML Converter</h2>
+  <div class="input-container">
+    <label for="colorConverterInput">Enter HEX or RGBA values:</label>
+    <input
+      type="text"
+      id="colorConverterInput"
+      placeholder="e.g. rgba(0, 153, 102, 1), #ff6432, rgba(0, 0, 255, 0.8)">
+    <button onclick="convertBidirectional()">Convert & Visualize</button>
   </div>
+  <p class="help-text">
+    Accepted formats:<br>
+    RGBA: <code>rgba(r, g, b, a)</code><br>
+    HEX: <code>#rrggbb</code> (6 characters only)
+  </p>
+  <div id="convertedSwatches" style="display: flex; flex-wrap: wrap;"></div>
+</div>
 
-  <!-- Tab 3: Palette Viewer -->
-  <div id="palette" class="tab">
-    <h2>Plasma Palette Viewer</h2>
-    <div id="paletteContainer"></div>
-  </div>
+<script>
+  function convertBidirectional() {
+    const inputStr = document.getElementById("colorConverterInput").value;
+    const swatchArea = document.getElementById("convertedSwatches");
+    swatchArea.innerHTML = "";
 
-  <script>
-    function showTab(id) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    }
+    const entries = inputStr.split(',').map(e => e.trim()).filter(Boolean);
+    const combined = [];
+    let buffer = [];
 
-    function rgbaStringToHex(rgbaStr) {
-      const match = rgbaStr.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+),\\s*(\\d*\\.?\\d+)\\)/);
-      if (!match) return "Invalid RGBA format";
-      const [_, r, g, b, a] = match;
-      const alpha = Math.round(parseFloat(a) * 255);
-      return `#${(+r).toString(16).padStart(2, '0')}${(+g).toString(16).padStart(2, '0')}${(+b).toString(16).padStart(2, '0')}${alpha.toString(16).padStart(2, '0')}`;
-    }
-
-    function convertToHex() {
-      const input = document.getElementById('rgbaInput').value;
-      const output = rgbaStringToHex(input);
-      document.getElementById('hexOutput').innerText = `HEX: ${output}`;
-    }
-
-    // Plasma palette (approximate RGB values)
-    const plasmaColors = [
-      [0.05, 0.03, 0.53], [0.25, 0.02, 0.65], [0.45, 0.03, 0.70],
-      [0.65, 0.10, 0.65], [0.80, 0.25, 0.55], [0.90, 0.45, 0.40],
-      [0.98, 0.65, 0.25], [0.99, 0.85, 0.10], [0.95, 0.95, 0.25], [0.90, 0.99, 0.45]
-    ];
-
-    const paletteContainer = document.getElementById('paletteContainer');
-    plasmaColors.forEach(rgb => {
-      const div = document.createElement('div');
-      div.className = 'swatch';
-      div.style.backgroundColor = `rgb(${rgb.map(c => Math.round(c * 255)).join(',')})`;
-      paletteContainer.appendChild(div);
+    // Join multi-part rgba values
+    entries.forEach(e => {
+      buffer.push(e);
+      if (buffer.join(',').includes("rgba") && buffer.join(',').endsWith(")")) {
+        combined.push(buffer.join(','));
+        buffer = [];
+      } else if (e.startsWith("#")) {
+        combined.push(e);
+        buffer = [];
+      }
     });
-  </script>
+
+    combined.forEach(item => {
+      let hex = null;
+      let rgba = null;
+
+      if (item.startsWith("rgba")) {
+        const vals = item.replace(/rgba\(|\)/g, "").split(',').map(x => parseFloat(x.trim()));
+        if (vals.length === 4 && vals.every(v => !isNaN(v))) {
+          const [r, g, b, a] = vals;
+          hex = `#${[r, g, b].map(c => Math.round(c).toString(16).padStart(2, '0')).join('')}`;
+          rgba = `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+      } else if (item.startsWith("#") && item.length === 7) {
+        const hexRaw = item.slice(1);
+        const r = parseInt(hexRaw.slice(0, 2), 16);
+        const g = parseInt(hexRaw.slice(2, 4), 16);
+        const b = parseInt(hexRaw.slice(4, 6), 16);
+        hex = item.toLowerCase();
+        rgba = `rgba(${r}, ${g}, ${b}, 1)`;
+      }
+
+      if (hex && rgba) {
+        const swatch = document.createElement("div");
+        swatch.style.width = "100px";
+        swatch.style.height = "80px";
+        swatch.style.margin = "10px";
+        swatch.style.border = "1px solid #ccc";
+        swatch.style.backgroundColor = hex;
+        swatch.style.display = "flex";
+        swatch.style.flexDirection = "column";
+        swatch.style.alignItems = "center";
+        swatch.style.justifyContent = "center";
+        swatch.innerHTML = `<div style="font-size: 0.8em;">${hex}</div><div style="font-size: 0.75em;">${rgba}</div>`;
+        swatchArea.appendChild(swatch);
+      }
+    });
+
+    if (!swatchArea.children.length) {
+      swatchArea.innerHTML = '<p style="color: red;">No valid input found. Please use RGBA or HEX format.</p>';
+    }
+  }
+</script>
+
+
+ <!-- Tab 3: Palette Generation of N Colours -->
+<div class="input-container">
+  <label for="colorCount">Number of colors:</label>
+  <input type="number" id="colorCount" min="1" max="20" value="10" placeholder="e.g. 10">
+
+  <label for="colormapChoice">Choose a colormap:</label>
+  <select id="colormapChoice">
+    <option value="viridis">Viridis</option>
+    <option value="plasma" selected>Plasma</option>
+    <option value="magma">Magma</option>
+    <option value="cividis">Cividis</option>
+    <option value="YlGnBu">YlGnBu</option>
+    <option value="BuGn">BuGn</option>
+    <option value="Spectral">Spectral</option>
+  </select>
+
+  <button onclick="generatePalette()">Generate Palette</button>
+</div>
+
+  <p class="help-text">
+    Generates a palette based on selected colormap and color count. HEX codes and rounded RGB values are shown below.
+  </p>
+
+  <div id="paletteSwatches" style="display: flex; flex-wrap: wrap;"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chroma-js@2.1.2/chroma.min.js"></script>
+<script>
+  function generatePalette() {
+    const count = parseInt(document.getElementById("colorCount").value);
+    const cmap = document.getElementById("colormapChoice").value;
+    const swatches = document.getElementById("paletteSwatches");
+    swatches.innerHTML = "";
+
+    try {
+      // Generate colors using chroma.js's interpolator
+      const scale = chroma.scale(cmap).colors(count);
+
+      scale.forEach((hexColor, i) => {
+        const rgb = chroma(hexColor).rgb().map(c => Math.round(c));
+        const swatch = document.createElement("div");
+        swatch.style.backgroundColor = hexColor;
+        swatch.style.width = "100px";
+        swatch.style.height = "80px";
+        swatch.style.margin = "10px";
+        swatch.style.border = "1px solid #ccc";
+        swatch.style.display = "flex";
+        swatch.style.flexDirection = "column";
+        swatch.style.alignItems = "center";
+        swatch.style.justifyContent = "center";
+        swatch.innerHTML = `
+          <div style="font-size: 0.8em;">${hexColor}</div>
+          <div style="font-size: 0.75em;">RGB: (${rgb.join(", ")})</div>
+        `;
+        swatches.appendChild(swatch);
+      });
+    } catch (err) {
+      swatches.innerHTML = '<p style="color: red;">Could not generate palette. Please check your selections.</p>';
+    }
+  }
+</script>
+
+  <h3>Colormap Gradient Previews</h3>
+<div id="colormapPreviews" style="margin-top: 20px;"></div>
+
+<script>
+  const colormaps = ['viridis', 'plasma', 'magma', 'cividis', 'YlGnBu', 'BuGn', 'Spectral'];
+
+  function createColormapGradients() {
+    const container = document.getElementById("colormapPreviews");
+
+    colormaps.forEach(mapName => {
+      const scale = chroma.scale(mapName).colors(100);
+
+      const gradientBox = document.createElement("div");
+      gradientBox.style.display = "flex";
+      gradientBox.style.flexDirection = "row";
+      gradientBox.style.marginBottom = "10px";
+      gradientBox.style.alignItems = "center";
+
+      // Label
+      const label = document.createElement("span");
+      label.innerText = mapName;
+      label.style.width = "100px";
+      label.style.marginRight = "10px";
+      label.style.fontWeight = "bold";
+
+      gradientBox.appendChild(label);
+
+      // Gradient
+      scale.forEach(hex => {
+        const block = document.createElement("div");
+        block.style.backgroundColor = hex;
+        block.style.width = "1.5%";
+        block.style.height = "30px";
+        gradientBox.appendChild(block);
+      });
+
+      container.appendChild(gradientBox);
+    });
+  }
+
+  // Call this after the page loads
+  window.addEventListener("DOMContentLoaded", createColormapGradients);
+</script>
+
 
 </body>
 </html>
