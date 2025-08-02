@@ -1,35 +1,60 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Color Tab App</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
-<style>
-  body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-  .nav button { margin: 5px; padding: 10px 15px; cursor: pointer; }
-  .tab { display: none; padding: 20px; background: white; border: 1px solid #ccc; border-radius: 8px; }
-  .tab.active { display: block; }
-  .swatch { width: 100px; height: 100px; margin: 10px; display: inline-block; border: 1px solid #333; }
-  .input-container { margin-bottom: 15px; }
-  .help-text { font-size: 0.9em; color: #666; }
-</style>
-
-</head>
-  <script>
-  function showTab(tabId) {
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.classList.remove('active');
-    });
-
-    const target = document.getElementById(tabId);
-    if (target) {
-      target.classList.add('active');
+ 
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
     }
-  }
-</script>
-
+    .nav button {
+      margin: 5px;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    .tab {
+      display: none;
+      padding: 20px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .tab.active {
+      display: block;
+    }
+    .swatch {
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      display: inline-block;
+      border: 1px solid #333;
+    }
+    .input-container {
+      margin-bottom: 15px;
+    }
+    .help-text {
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+  <!-- Tab navigation script -->
+  <script>
+    function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      const target = document.getElementById(tabId);
+      if (target) {
+        target.classList.add('active');
+      }
+    }
+  </script>
+</head>
 <body>
 
   <h1>🎨 Color Tools App</h1>
@@ -40,8 +65,6 @@
   <button onclick="showTab('palette')">Palette Viewer</button>
   <button onclick="showTab('gallery')">Gradient Gallery</button>
 </div>
-
-
 
 <!-- Tab 1: Swatch -->
 <div id="swatch" class="tab active">
@@ -207,21 +230,20 @@
     <label for="colorCount">Number of colors:</label>
     <input type="number" id="colorCount" min="1" max="20" value="10" placeholder="e.g. 10">
 
- <label for="colormapChoice">Choose a colormap:</label>
-<select id="colormapChoice" onchange="updateGradientPreview()">
-  <optgroup label="Chroma Native">
-    <option value="cividis">Cividis</option>
-    <option value="magma">Magma</option>
-    <option value="plasma">Plasma</option>
-    <option value="viridis">Viridis</option>
-  </optgroup>
-  <optgroup label="Custom Presets">
-    <option value="BuGn">BuGn</option>
-    <option value="Spectral">Spectral</option>
-    <option value="YlGnBu">YlGnBu</option>
-  </optgroup>
-</select>
-
+    <label for="colormapChoice">Choose a colormap:</label>
+    <select id="colormapChoice" onchange="updateGradientPreview()">
+      <optgroup label="Chroma Native">
+        <option value="cividis">Cividis</option>
+        <option value="magma">Magma</option>
+        <option value="plasma">Plasma</option>
+        <option value="viridis">Viridis</option>
+      </optgroup>
+      <optgroup label="Custom Presets">
+        <option value="BuGn">BuGn</option>
+        <option value="Spectral">Spectral</option>
+        <option value="YlGnBu">YlGnBu</option>
+      </optgroup>
+    </select>
 
     <button onclick="generatePalette()">Generate Palette</button>
   </div>
@@ -234,34 +256,74 @@
 
   <h3>Colormap Gradient Previews</h3>
   <div id="colormapPreviews" style="margin-top: 20px;"></div>
-  
+
+  <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
 </div>
 
+<style>
+  .swatch {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .gradient-preview {
+    width: 200px;
+    height: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin: 5px 0;
+  }
+  .input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+</style>
+
 <script>
+  // Ensure Chroma.js is loaded
+  if (typeof chroma === 'undefined') {
+    console.error('Chroma.js is not loaded. Please include it in your HTML.');
+    document.getElementById('errorMessage').style.display = 'block';
+    document.getElementById('errorMessage').innerText = 'Error: Chroma.js library is not loaded.';
+  }
+
   function generatePalette() {
-    const count = parseInt(document.getElementById("colorCount").value, 10);
-    const mapName = document.getElementById("colormapChoice").value;
-    const swatchArea = document.getElementById("paletteSwatches");
-    swatchArea.innerHTML = "";
+    const count = parseInt(document.getElementById('colorCount').value, 10);
+    const mapName = document.getElementById('colormapChoice').value;
+    const swatchArea = document.getElementById('paletteSwatches');
+    const errorMessage = document.getElementById('errorMessage');
+    swatchArea.innerHTML = '';
+    errorMessage.style.display = 'none';
+
+    // Validate input
+    if (isNaN(count) || count < 1 || count > 20) {
+      errorMessage.style.display = 'block';
+      errorMessage.innerText = 'Please enter a number between 1 and 20.';
+      return;
+    }
 
     // Define supported named colormaps or fallback to custom presets
     let scale;
+    const customMaps = {
+      YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84'],
+      BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e'],
+      Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
+    };
 
     try {
       // Try direct chroma named scale
       scale = chroma.scale(mapName).colors(count);
     } catch {
-      // If not supported, define custom palettes here
-      const customMaps = {
-        YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84'],
-        BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e'],
-        Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
-      };
-
+      // Fallback to custom palettes
       if (customMaps[mapName]) {
         scale = chroma.scale(customMaps[mapName]).colors(count);
       } else {
-        throw new Error("Unsupported colormap");
+        errorMessage.style.display = 'block';
+        errorMessage.innerText = `Unsupported colormap: ${mapName}`;
+        return;
       }
     }
 
@@ -269,79 +331,139 @@
       const rgb = chroma(hex).rgba();
       const roundedRGB = `rgba(${rgb.map((v, i) => i < 3 ? Math.round(v) : v.toFixed(2)).join(', ')})`;
 
-      const wrapper = document.createElement("div");
-      wrapper.style.margin = "10px";
-      wrapper.style.textAlign = "center";
+      const wrapper = document.createElement('div');
+      wrapper.style.margin = '10px';
+      wrapper.style.textAlign = 'center';
 
-      const swatch = document.createElement("div");
-      swatch.className = "swatch";
+      const swatch = document.createElement('div');
+      swatch.className = 'swatch';
       swatch.style.backgroundColor = hex;
       wrapper.appendChild(swatch);
 
-      const label = document.createElement("div");
-      label.style.fontSize = "0.9em";
-      label.style.marginTop = "5px";
+      const label = document.createElement('div');
+      label.style.fontSize = '0.9em';
+      label.style.marginTop = '5px';
       label.innerText = `${hex} / ${roundedRGB}`;
       wrapper.appendChild(label);
 
       swatchArea.appendChild(wrapper);
     });
   }
-</script>
 
+  function updateGradientPreview() {
+    const mapName = document.getElementById('colormapChoice').value;
+    const previewArea = document.getElementById('colormapPreviews');
+    const errorMessage = document.getElementById('errorMessage');
+    previewArea.innerHTML = '';
+    errorMessage.style.display = 'none';
 
-  
-<!-- Tab 4: Static Gradient Gallery -->
-<div id="gallery" class="tab">
-  <h2>Gradient Gallery</h2>
-  <p class="help-text">
-    This gallery shows color gradients for various colormaps. Each bar displays 256 colors interpolated across its range.
-  </p>
-  <div id="gradientGallery" style="margin-top: 20px;"></div>
-</div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", renderGradientGallery);
-
-  function renderGradientGallery() {
-    const container = document.getElementById("gradientGallery");
-    container.innerHTML = "";
-
-    const colormaps = {
-      viridis: null,
-      plasma: null,
-      magma: null,
-      cividis: null,
+    const customMaps = {
       YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84'],
       BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e'],
       Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
     };
 
-    Object.entries(colormaps).forEach(([name, customScale]) => {
-      const scale = customScale
-        ? chroma.scale(customScale).mode('lab').colors(256)
-        : chroma.scale(name).colors(256);
+    let colors;
+    try {
+      colors = customMaps[mapName] || chroma.scale(mapName).colors(10); // Use 10 colors for preview
+    } catch {
+      errorMessage.style.display = 'block';
+      errorMessage.innerText = `Unable to generate preview for ${mapName}`;
+      return;
+    }
 
-      const label = document.createElement("div");
-      label.innerText = name;
-      label.style.marginBottom = "5px";
-      label.style.fontWeight = "bold";
+    const gradientDiv = document.createElement('div');
+    gradientDiv.className = 'gradient-preview';
+    gradientDiv.style.background = `linear-gradient(to right, ${colors.join(', ')})`;
+    previewArea.appendChild(gradientDiv);
 
-      const bar = document.createElement("div");
-      bar.style.display = "flex";
-      bar.style.marginBottom = "15px";
-      bar.style.border = "1px solid #ccc";
-      bar.style.height = "30px";
+    const label = document.createElement('div');
+    label.style.fontSize = '0.9em';
+    label.style.marginTop = '5px';
+    label.innerText = `${mapName} Preview`;
+    previewArea.appendChild(label);
+  }
 
-      scale.forEach(hex => {
-        const segment = document.createElement("div");
-        segment.style.width = "0.4%";
-        segment.style.backgroundColor = hex;
-        bar.appendChild(segment);
-      });
+  // Initialize gradient preview on page load
+  document.addEventListener('DOMContentLoaded', updateGradientPreview);
+</script>
 
-      container.appendChild(label);
-      container.appendChild(bar);
+  
+<!-- Tab 4: Gradient Gallery -->
+<div id="gallery" class="tab">
+  <h2>Gradient Gallery</h2>
+  <p class="help-text">
+    This gallery shows color gradients for various colormaps. Each bar displays a smooth gradient interpolated across its range.
+  </p>
+  <div id="gradientGallery" style="margin-top: 20px;"></div>
+  <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
+</div>
+
+<style>
+  .gradient-bar {
+    width: 100%;
+    max-width: 600px; /* Limit width for readability */
+    height: 30px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 15px;
+  }
+  .gradient-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 1em;
+  }
+  @media (max-width: 600px) {
+    .gradient-bar {
+      max-width: 100%;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', renderGradientGallery);
+
+  function renderGradientGallery() {
+    const container = document.getElementById('gradientGallery');
+    const errorMessage = document.getElementById('errorMessage');
+    container.innerHTML = '';
+    errorMessage.style.display = 'none';
+
+    // Ensure Chroma.js is loaded
+    if (typeof chroma === 'undefined') {
+      console.error('Chroma.js is not loaded. Please include it in your HTML.');
+      errorMessage.style.display = 'block';
+      errorMessage.innerText = 'Error: Chroma.js library is not loaded.';
+      return;
+    }
+
+    const colormaps = {
+      viridis: chroma.scale('viridis').mode('lab').colors(10),
+      plasma: chroma.scale('plasma').mode('lab').colors(10),
+      magma: chroma.scale('magma').mode('lab').colors(10),
+      cividis: chroma.scale('cividis').mode('lab').colors(10),
+      YlGnBu: chroma.scale(['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84']).mode('lab').colors(10),
+      BuGn: chroma.scale(['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e']).mode('lab').colors(10),
+      Spectral: chroma.scale(['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']).mode('lab').colors(10)
+    };
+
+    Object.entries(colormaps).forEach(([name, colors]) => {
+      try {
+        const label = document.createElement('div');
+        label.innerText = name;
+        label.className = 'gradient-label';
+
+        const bar = document.createElement('div');
+        bar.className = 'gradient-bar';
+        bar.style.background = `linear-gradient(to right, ${colors.join(', ')})`;
+
+        container.appendChild(label);
+        container.appendChild(bar);
+      } catch (error) {
+        console.error(`Failed to render gradient for ${name}:`, error);
+        errorMessage.style.display = 'block';
+        errorMessage.innerText = `Error rendering gradient for ${name}.`;
+      }
     });
   }
 </script>
