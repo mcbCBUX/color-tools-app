@@ -47,37 +47,55 @@
     const swatchContainer = document.getElementById('swatchContainer');
     swatchContainer.innerHTML = '';
 
+    let colors;
     try {
-      const colors = JSON.parse(colorInput);
-
-      colors.forEach(color => {
-        const swatch = document.createElement('div');
-        swatch.className = 'swatch';
-        swatch.style.backgroundColor = Array.isArray(color)
-          ? `rgba(${color.join(',')})`
-          : color;
-
-        const label = document.createElement('div');
-        label.style.textAlign = 'center';
-        label.style.marginTop = '5px';
-        label.style.fontSize = '0.9em';
-        label.innerText = Array.isArray(color)
-          ? `rgba(${color.join(',')})`
-          : color;
-
-        const wrapper = document.createElement('div');
-        wrapper.style.margin = '10px';
-        wrapper.style.textAlign = 'center';
-        wrapper.appendChild(swatch);
-        wrapper.appendChild(label);
-
-        swatchContainer.appendChild(wrapper);
-      });
+      colors = JSON.parse(colorInput);
+      if (!Array.isArray(colors)) {
+        throw new Error("Input must be a JSON array.");
+      }
     } catch (error) {
-      swatchContainer.innerHTML = '<p style="color: red;">Invalid input format. Please enter a valid JSON array of colors.</p>';
+      swatchContainer.innerHTML = '<p style="color: red;">Invalid input format. Please enter a valid JSON array like ["#fdab33", [0.2, 0.6, 0.8, 0.7]].</p>';
+      return;
     }
+
+    colors.forEach(color => {
+      let bgColor = '';
+      let labelText = '';
+
+      if (Array.isArray(color) && color.length === 4) {
+        // Normalize RGBA values: convert 0–1 floats to 0–255 if needed
+        const rgba = color.map((v, i) => i < 3 ? Math.round(v * 255) : v);
+        bgColor = `rgba(${rgba.join(',')})`;
+        labelText = `rgba(${rgba.join(',')})`;
+      } else if (typeof color === 'string') {
+        bgColor = color;
+        labelText = color;
+      } else {
+        labelText = 'Invalid color';
+        bgColor = '#ccc';
+      }
+
+      const swatch = document.createElement('div');
+      swatch.className = 'swatch';
+      swatch.style.backgroundColor = bgColor;
+
+      const label = document.createElement('div');
+      label.style.textAlign = 'center';
+      label.style.marginTop = '5px';
+      label.style.fontSize = '0.9em';
+      label.innerText = labelText;
+
+      const wrapper = document.createElement('div');
+      wrapper.style.margin = '10px';
+      wrapper.style.textAlign = 'center';
+      wrapper.appendChild(swatch);
+      wrapper.appendChild(label);
+
+      swatchContainer.appendChild(wrapper);
+    });
   }
 </script>
+
 
   <!-- Tab 2: RGBA to HEX Converter -->
   <div id="converter" class="tab">
