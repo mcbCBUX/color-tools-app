@@ -25,45 +25,59 @@
     <button onclick="showTab('gallery')">Gradient Gallery</button>
   </div>
 
-  <!-- Tab 1: Single Swatch -->
-  <div id="swatch" class="tab active">
-   <h2>Single Color Swatch</h2>
-    <div class="input-container">
-      <label for="colorInput">Enter a list of colors (HEX or RGBA):</label>
-      <input type="text" id="colorInput" placeholder="e.g. ['#fdab33', rgba(0.2, 0.6, 0.8, 0.7)]">
-      <button onclick="generateSwatches()">Generate Swatches</button>
-    </div>
-    <p class="help-text">Examples of valid formats: ['#fdab33', rgba(0.2, 0.6, 0.8, 0.7)]</p>
-    <div id="swatchContainer"></div>
+  <!-- Tab 1: Multiple Color Swatches -->
+<div id="swatch" class="tab active">
+  <h2>Color Swatches</h2>
+  <div class="input-container">
+    <label for="colorInput">Enter a list of colors (HEX or RGBA):</label>
+    <input type="text" id="colorInput" placeholder='e.g. ["#fdab33", [0.2, 0.6, 0.8, 0.7], "#33fdab", [0.8, 0.2, 0.5, 1.0]]'>
+    <button onclick="generateSwatches()">Generate Swatches</button>
   </div>
-
-  <script>
-    function showTab(id) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    }
-
-    function generateSwatches() {
-      const colorInput = document.getElementById('colorInput').value;
-      const swatchContainer = document.getElementById('swatchContainer');
-      swatchContainer.innerHTML = '';
-      try {
-        const colors = JSON.parse(colorInput);
-        colors.forEach(color => {
-          const div = document.createElement('div');
-          div.className = 'swatch';
-          div.style.backgroundColor = typeof color === 'string' ? color : `rgba(${color.join(',')})`;
-          const label = typeof color === 'string' ? color : `rgba(${color.join(',')})`;
-          div.innerText = label;
-          swatchContainer.appendChild(div);
-        });
-      } catch (error) {
-        swatchContainer.innerHTML = '<p style="color: red;">Invalid input format. Please enter a valid JSON array of colors.</p>';
-      }
-    }
-  </script>
-</html>
+  <p class="help-text">
+    Examples of valid formats:<br>
+    Single: <code>"#fdab33"</code> or <code>[0.2, 0.6, 0.8, 0.7]</code><br>
+    Multiple: <code>["#fdab33", [0.2, 0.6, 0.8, 0.7], "#33fdab"]</code>
+  </p>
+  <div id="swatchContainer" style="display: flex; flex-wrap: wrap;"></div>
 </div>
+
+<script>
+  function generateSwatches() {
+    const colorInput = document.getElementById('colorInput').value;
+    const swatchContainer = document.getElementById('swatchContainer');
+    swatchContainer.innerHTML = '';
+
+    try {
+      const colors = JSON.parse(colorInput);
+
+      colors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'swatch';
+        swatch.style.backgroundColor = Array.isArray(color)
+          ? `rgba(${color.join(',')})`
+          : color;
+
+        const label = document.createElement('div');
+        label.style.textAlign = 'center';
+        label.style.marginTop = '5px';
+        label.style.fontSize = '0.9em';
+        label.innerText = Array.isArray(color)
+          ? `rgba(${color.join(',')})`
+          : color;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.margin = '10px';
+        wrapper.style.textAlign = 'center';
+        wrapper.appendChild(swatch);
+        wrapper.appendChild(label);
+
+        swatchContainer.appendChild(wrapper);
+      });
+    } catch (error) {
+      swatchContainer.innerHTML = '<p style="color: red;">Invalid input format. Please enter a valid JSON array of colors.</p>';
+    }
+  }
+</script>
 
   <!-- Tab 2: RGBA to HEX Converter -->
   <div id="converter" class="tab">
