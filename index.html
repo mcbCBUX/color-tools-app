@@ -63,7 +63,6 @@
   <button onclick="showTab('swatch')">Color Swatches</button>
   <button onclick="showTab('converter')">RGBA ↔ HEX Converter</button>
   <button onclick="showTab('palette')">Palette Viewer</button>
-  <button onclick="showTab('gallery')">Gradient Gallery</button>
 </div>
 
 <!-- Tab 1: Swatch -->
@@ -410,96 +409,6 @@
   document.addEventListener('DOMContentLoaded', updateGradientPreview);
 </script>
 
-  
-<!-- Tab 4: Static Gradient Gallery -->
-<div id="gallery" class="tab">
-  <h2>Static Gradient Gallery</h2>
-  <p class="help-text">
-    Smooth gradients for various colormaps, interpolated across 256 steps.
-  </p>
-  <div id="gradientGallery" style="margin-top: 20px; min-height: 200px;"></div>
-  <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
-</div>
-
-<style>
-  .gradient-bar {
-    width: 100%;
-    max-width: 600px;
-    height: 30px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    background: transparent;
-    display: block;
-  }
-  .gradient-label {
-    font-weight: bold;
-    margin-bottom: 5px;
-    font-size: 1em;
-    text-transform: capitalize;
-  }
-  #gradientGallery {
-    min-height: 200px;
-    background: transparent;
-  }
-  @media (max-width: 600px) {
-    .gradient-bar {
-      max-width: 100%;
-    }
-  }
-</style>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('Tab 4: DOMContentLoaded fired');
-    renderGradientGallery();
-  });
-
-  // Use same customMaps as Tab 3
-  const customMaps = {
-    viridis: ['#440154', '#482475', '#3f4a8a', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'],
-    plasma: ['#0d0887', '#3e049c', '#6300a7', '#8707a6', '#a31895', '#bf2979', '#d8465b', '#eb6a38', '#f7931a', '#f9cb35'],
-    magma: ['#000004', '#160b39', '#3a0c63', '#63197f', '#8a2482', '#b02978', '#d24163', '#ed694b', '#f9943a', '#fcbf49'],
-    cividis: ['#00224e', '#003971', '#1a4e7e', '#37607d', '#55707c', '#72807c', '#8f9082', '#ada38c', '#ccbf9f', '#ede2b4'],
-    YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58', '#0c2c84'],
-    BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#0868ac', '#084081', '#08589e'],
-    Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
-  };
-
-  function renderGradientGallery() {
-    const container = document.getElementById('gradientGallery');
-    const errorMessage = document.getElementById('errorMessage');
-    container.innerHTML = '';
-    errorMessage.style.display = 'none';
-
-    if (typeof chroma === 'undefined') {
-      console.error('Tab 4: Chroma.js is not loaded.');
-      errorMessage.style.display = 'block';
-      errorMessage.innerText = 'Error: Chroma.js library is not loaded.';
-      return;
-    }
-
-    Object.entries(customMaps).forEach(([name, colors]) => {
-      try {
-        console.log(`Tab 4: Rendering gradient for ${name}`);
-        const label = document.createElement('div');
-        label.innerText = name;
-        label.className = 'gradient-label';
-
-        const bar = document.createElement('div');
-        bar.className = 'gradient-bar';
-        bar.style.background = `linear-gradient(to right, ${colors.join(', ')})`;
-
-        container.appendChild(label);
-        container.appendChild(bar);
-      } catch (error) {
-        console.error(`Tab 4: Failed to render gradient for ${name}:`, error);
-        errorMessage.style.display = 'block';
-        errorMessage.innerText = `Error rendering gradient for ${name}.`;
-      }
-    });
-  }
-</script>
   
 </body>
 </html>
