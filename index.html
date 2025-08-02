@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Color Tab App</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    .nav button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+    .tab { display: none; padding: 20px; background: white; border: 1px solid #ccc; border-radius: 8px; }
+    .tab.active { display: block; }
+    .swatch { width: 100px; height: 100px; margin: 10px; display: inline-block; border: 1px solid #333; }
+  </style>
+</head>
+<body>
+
+  <h1>🎨 Color Tab App</h1>
+
+  <div class="nav">
+    <button onclick="showTab('swatch')">Single Swatch</button>
+    <button onclick="showTab('converter')">RGBA to HEX</button>
+    <button onclick="showTab('palette')">Palette Viewer</button>
+  </div>
+
+  <!-- Tab 1: Single Swatch -->
+  <div id="swatch" class="tab active">
+    <h2>Single Color Swatch</h2>
+    <div class="swatch" style="background-color: rgba(0, 153, 102, 1);"></div>
+    <p>Color: <code>rgba(0, 153, 102, 1)</code></p>
+  </div>
+
+  <!-- Tab 2: RGBA to HEX Converter -->
+  <div id="converter" class="tab">
+    <h2>RGBA to HEX Converter</h2>
+    <input type="text" id="rgbaInput" placeholder="e.g. rgba(0, 153, 102, 1)">
+    <button onclick="convertToHex()">Convert</button>
+    <p id="hexOutput"></p>
+  </div>
+
+  <!-- Tab 3: Palette Viewer -->
+  <div id="palette" class="tab">
+    <h2>Plasma Palette Viewer</h2>
+    <div id="paletteContainer"></div>
+  </div>
+
+  <script>
+    function showTab(id) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function rgbaStringToHex(rgbaStr) {
+      const match = rgbaStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),\s*(\d*\.?\d+)\)/);
+      if (!match) return "Invalid RGBA format";
+      const [_, r, g, b, a] = match;
+      const alpha = Math.round(parseFloat(a) * 255);
+      return `#${(+r).toString(16).padStart(2, '0')}${(+g).toString(16).padStart(2, '0')}${(+b).toString(16).padStart(2, '0')}${alpha.toString(16).padStart(2, '0')}`;
+    }
+
+    function convertToHex() {
+      const input = document.getElementById('rgbaInput').value;
+      const output = rgbaStringToHex(input);
+      document.getElementById('hexOutput').innerText = `HEX: ${output}`;
+    }
+
+    // Plasma palette (approximate RGB values)
+    const plasmaColors = [
+      [0.05, 0.03, 0.53], [0.25, 0.02, 0.65], [0.45, 0.03, 0.70],
+      [0.65, 0.10, 0.65], [0.80, 0.25, 0.55], [0.90, 0.45, 0.40],
+      [0.98, 0.65, 0.25], [0.99, 0.85, 0.10], [0.95, 0.95, 0.25], [0.90, 0.99, 0.45]
+    ];
+
+    const paletteContainer = document.getElementById('paletteContainer');
+    plasmaColors.forEach(rgb => {
+      const div = document.createElement('div');
+      div.className = 'swatch';
+      div.style.backgroundColor = `rgb(${rgb.map(c => Math.round(c * 255)).join(',')})`;
+      paletteContainer.appendChild(div);
+    });
+  </script>
+
+</body>
+</html>
