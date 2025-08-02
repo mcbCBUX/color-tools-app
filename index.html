@@ -225,47 +225,41 @@
 <!-- Tab 3: Palette Generation -->
 <div id="palette" class="tab">
   <h2>Palette Generation of N Colours</h2>
-
   <div class="input-container">
     <label for="colorCount">Number of colors:</label>
     <input type="number" id="colorCount" min="1" max="20" value="10" placeholder="e.g. 10">
-
     <label for="colormapChoice">Choose a colormap:</label>
     <select id="colormapChoice" onchange="updateGradientPreview()">
       <optgroup label="Chroma Native">
-        <option value="cividis">Cividis</option>
-        <option value="magma">Magma</option>
-        <option value="plasma">Plasma</option>
         <option value="viridis">Viridis</option>
+        <option value="plasma">Plasma</option>
+        <option value="magma">Magma</option>
+        <option value="cividis">Cividis</option>
       </optgroup>
       <optgroup label="Custom Presets">
+        <option value="YlGnBu">YlGnBu</option>
         <option value="BuGn">BuGn</option>
         <option value="Spectral">Spectral</option>
-        <option value="YlGnBu">YlGnBu</option>
       </optgroup>
     </select>
-
     <button onclick="generatePalette()">Generate Palette</button>
   </div>
-
   <p class="help-text">
-    Generates a palette based on selected colormap and color count. HEX codes and rounded RGB values are shown below.
+    Generates a palette of 1 to 20 colors based on the selected colormap. HEX codes and rounded RGB values are displayed below.
   </p>
-
   <div id="paletteSwatches" style="display: flex; flex-wrap: wrap;"></div>
-
   <h3>Colormap Gradient Previews</h3>
   <div id="colormapPreviews" style="margin-top: 20px;"></div>
-
   <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
 </div>
 
 <style>
   .swatch {
-    width: 50px;
-    height: 50px;
-    border: 1px solid #ccc;
+    width: 100px; 
+    height: 100px;
+    border: 1px solid #333;
     border-radius: 4px;
+    margin: 10px;
   }
   .gradient-preview {
     width: 200px;
@@ -283,13 +277,6 @@
 </style>
 
 <script>
-  // Ensure Chroma.js is loaded
-  if (typeof chroma === 'undefined') {
-    console.error('Chroma.js is not loaded. Please include it in your HTML.');
-    document.getElementById('errorMessage').style.display = 'block';
-    document.getElementById('errorMessage').innerText = 'Error: Chroma.js library is not loaded.';
-  }
-
   function generatePalette() {
     const count = parseInt(document.getElementById('colorCount').value, 10);
     const mapName = document.getElementById('colormapChoice').value;
@@ -298,33 +285,34 @@
     swatchArea.innerHTML = '';
     errorMessage.style.display = 'none';
 
-    // Validate input
     if (isNaN(count) || count < 1 || count > 20) {
       errorMessage.style.display = 'block';
       errorMessage.innerText = 'Please enter a number between 1 and 20.';
       return;
     }
 
-    // Define supported named colormaps or fallback to custom presets
-    let scale;
     const customMaps = {
       YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84'],
       BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e'],
       Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
     };
 
+    let scale;
     try {
-      // Try direct chroma named scale
-      scale = chroma.scale(mapName).colors(count);
-    } catch {
-      // Fallback to custom palettes
       if (customMaps[mapName]) {
-        scale = chroma.scale(customMaps[mapName]).colors(count);
+        scale = chroma.scale(customMaps[mapName]).mode('lab').colors(count);
       } else {
-        errorMessage.style.display = 'block';
-        errorMessage.innerText = `Unsupported colormap: ${mapName}`;
-        return;
+        const validChromaMaps = ['viridis', 'plasma', 'magma', 'cividis'];
+        if (!validChromaMaps.includes(mapName)) {
+          throw new Error(`Invalid colormap: ${mapName}`);
+        }
+        scale = chroma.scale(mapName).mode('lab').colors(count);
       }
+    } catch (error) {
+      console.error(`Error generating palette for ${mapName}:`, error);
+      errorMessage.style.display = 'block';
+      errorMessage.innerText = `Failed to generate palette for ${mapName}.`;
+      return;
     }
 
     scale.forEach(hex => {
@@ -365,8 +353,9 @@
 
     let colors;
     try {
-      colors = customMaps[mapName] || chroma.scale(mapName).colors(10); // Use 10 colors for preview
-    } catch {
+      colors = customMaps[mapName] ? chroma.scale(customMaps[mapName]).mode('lab').colors(20) : chroma.scale(mapName).mode('lab').colors(20);
+    } catch (error) {
+      console.error(`Error generating preview for ${mapName}:`, error);
       errorMessage.style.display = 'block';
       errorMessage.innerText = `Unable to generate preview for ${mapName}`;
       return;
@@ -384,7 +373,7 @@
     previewArea.appendChild(label);
   }
 
-  // Initialize gradient preview on page load
+  // Initialize preview on load
   document.addEventListener('DOMContentLoaded', updateGradientPreview);
 </script>
 
@@ -393,7 +382,7 @@
 <div id="gallery" class="tab">
   <h2>Gradient Gallery</h2>
   <p class="help-text">
-    This gallery shows color gradients for various colormaps. Each bar displays a smooth gradient interpolated across its range.
+    Smooth gradients for various colormaps, interpolated across 256 steps.
   </p>
   <div id="gradientGallery" style="margin-top: 20px;"></div>
   <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
@@ -402,8 +391,8 @@
 <style>
   .gradient-bar {
     width: 100%;
-    max-width: 600px; /* Limit width for readability */
-    height: 30px;
+    max-width: 800px; 
+    height: 40px;
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-bottom: 15px;
@@ -412,6 +401,7 @@
     font-weight: bold;
     margin-bottom: 5px;
     font-size: 1em;
+    text-transform: capitalize; 
   }
   @media (max-width: 600px) {
     .gradient-bar {
@@ -431,20 +421,20 @@
 
     // Ensure Chroma.js is loaded
     if (typeof chroma === 'undefined') {
-      console.error('Chroma.js is not loaded. Please include it in your HTML.');
+      console.error('Chroma.js is not loaded.');
       errorMessage.style.display = 'block';
       errorMessage.innerText = 'Error: Chroma.js library is not loaded.';
       return;
     }
 
     const colormaps = {
-      viridis: chroma.scale('viridis').mode('lab').colors(10),
-      plasma: chroma.scale('plasma').mode('lab').colors(10),
-      magma: chroma.scale('magma').mode('lab').colors(10),
-      cividis: chroma.scale('cividis').mode('lab').colors(10),
-      YlGnBu: chroma.scale(['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84']).mode('lab').colors(10),
-      BuGn: chroma.scale(['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e']).mode('lab').colors(10),
-      Spectral: chroma.scale(['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']).mode('lab').colors(10)
+      viridis: chroma.scale('viridis').mode('lab').colors(50),
+      plasma: chroma.scale('plasma').mode('lab').colors(50),
+      magma: chroma.scale('magma').mode('lab').colors(50),
+      cividis: chroma.scale('cividis').mode('lab').colors(50),
+      YlGnBu: chroma.scale(['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84']).mode('lab').colors(50),
+      BuGn: chroma.scale(['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e']).mode('lab').colors(50),
+      Spectral: chroma.scale(['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']).mode('lab').colors(50)
     };
 
     Object.entries(colormaps).forEach(([name, colors]) => {
@@ -467,9 +457,7 @@
     });
   }
 </script>
-
-
-
+  
 </body>
 </html>
 
