@@ -104,7 +104,7 @@
 
 
 <!-- Tab 2: RGBA ↔ HTML Converter -->
-<div id="converterTab" class="tab">
+<div id="converter" class="tab">
   <h2>RGBA ↔ HTML Converter</h2>
   <div class="input-container">
     <label for="colorConverterInput">Enter HEX or RGBA values:</label>
@@ -265,7 +265,8 @@
 
   
  <!-- Tab 4: Palette Generation of N Colours -->
-<div class="input-container">
+<div id="gallery" class="tab">
+  <h2>Gradient Gallery</h2>
   <label for="colorCount">Number of colors:</label>
   <input type="number" id="colorCount" min="1" max="20" value="10" placeholder="e.g. 10">
 
@@ -327,13 +328,7 @@
 </script>
 
 
-<script>
-  function showTab(tabId) {
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    const target = document.getElementById(tabId);
-    if (target) target.classList.add('active');
-  }
-</script>
+
 
 </body>
 </html>
