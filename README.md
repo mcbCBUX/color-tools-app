@@ -1,2 +1,2 @@
 # color-tools-app
-various useful functions to be a pro in the use of colours when writing code
+A simple web app to explore color swatches, convert RGBA to HEX, and view Plasma palettes. Built with HTML, CSS, and JavaScript. Hosted on GitHub Pages.
