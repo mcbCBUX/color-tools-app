@@ -247,48 +247,25 @@
   }
 </script>
 
-  <h3>Colormap Gradient Previews</h3>
-<div id="colormapPreviews" style="margin-top: 20px;"></div>
 
+<div class="nav">
+  <button onclick="showTab('tab1')">Tab 1</button>
+  <button onclick="showTab('tab2')">Tab 2</button>
+  <button onclick="showTab('tab3')">Tab 3</button>
+</div>
+
+<!-- Tabs -->
+<div id="tab1" class="tab active"> ... </div>
+<div id="tab2" class="tab"> ... </div>
+<div id="tab3" class="tab"> ... </div>
+
+<!-- Only ONE script needed -->
 <script>
-  const colormaps = ['viridis', 'plasma', 'magma', 'cividis', 'YlGnBu', 'BuGn', 'Spectral'];
-
-  function createColormapGradients() {
-    const container = document.getElementById("colormapPreviews");
-
-    colormaps.forEach(mapName => {
-      const scale = chroma.scale(mapName).colors(100);
-
-      const gradientBox = document.createElement("div");
-      gradientBox.style.display = "flex";
-      gradientBox.style.flexDirection = "row";
-      gradientBox.style.marginBottom = "10px";
-      gradientBox.style.alignItems = "center";
-
-      // Label
-      const label = document.createElement("span");
-      label.innerText = mapName;
-      label.style.width = "100px";
-      label.style.marginRight = "10px";
-      label.style.fontWeight = "bold";
-
-      gradientBox.appendChild(label);
-
-      // Gradient
-      scale.forEach(hex => {
-        const block = document.createElement("div");
-        block.style.backgroundColor = hex;
-        block.style.width = "1.5%";
-        block.style.height = "30px";
-        gradientBox.appendChild(block);
-      });
-
-      container.appendChild(gradientBox);
-    });
+  function showTab(tabId) {
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    const target = document.getElementById(tabId);
+    if (target) target.classList.add('active');
   }
-
-  // Call this after the page loads
-  window.addEventListener("DOMContentLoaded", createColormapGradients);
 </script>
 
 
