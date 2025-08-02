@@ -230,32 +230,34 @@
     <input type="number" id="colorCount" min="1" max="20" value="10" placeholder="e.g. 10">
     <label for="colormapChoice">Choose a colormap:</label>
     <select id="colormapChoice" onchange="updateGradientPreview()">
-      <optgroup label="Chroma Native">
+      <optgroup label="Sequential">
         <option value="viridis">Viridis</option>
         <option value="plasma">Plasma</option>
         <option value="magma">Magma</option>
         <option value="cividis">Cividis</option>
-      </optgroup>
-      <optgroup label="Custom Presets">
         <option value="YlGnBu">YlGnBu</option>
         <option value="BuGn">BuGn</option>
+      </optgroup>
+      <optgroup label="Diverging">
         <option value="Spectral">Spectral</option>
       </optgroup>
     </select>
     <button onclick="generatePalette()">Generate Palette</button>
   </div>
   <p class="help-text">
-    Generates a palette of 1 to 20 colors based on the selected colormap. HEX codes and rounded RGB values are displayed below.
+    Generates a palette of 1 to 20 colors based on the selected colormap. HEX codes, rounded RGB values, and lists for Python are displayed below.
   </p>
   <div id="paletteSwatches" style="display: flex; flex-wrap: wrap;"></div>
   <h3>Colormap Gradient Previews</h3>
   <div id="colormapPreviews" style="margin-top: 20px;"></div>
+  <h3>Python-Compatible Lists</h3>
+  <div id="paletteLists" style="margin-top: 20px; font-family: monospace;"></div>
   <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
 </div>
 
 <style>
   .swatch {
-    width: 100px; 
+    width: 100px;
     height: 100px;
     border: 1px solid #333;
     border-radius: 4px;
@@ -274,15 +276,34 @@
     align-items: center;
     margin-bottom: 20px;
   }
+  #paletteLists {
+    white-space: pre-wrap;
+    font-size: 0.9em;
+  }
 </style>
 
 <script>
+  // Define customMaps 
+  const customMaps = {
+    viridis: ['#440154', '#482475', '#3f4a8a', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'],
+    plasma: ['#0d0887', '#3e049c', '#6300a7', '#8707a6', '#a31895', '#bf2979', '#d8465b', '#eb6a38', '#f7931a', '#f9cb35'],
+    magma: ['#000004', '#160b39', '#3a0c63', '#63197f', '#8a2482', '#b02978', '#d24163', '#ed694b', '#f9943a', '#fcbf49'],
+    cividis: ['#00224e', '#003971', '#1a4e7e', '#37607d', '#55707c', '#72807c', '#8f9082', '#ada38c', '#ccbf9f', '#ede2b4'],
+    YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58', '#0c2c84'],
+    BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#0868ac', '#084081', '#08589e'],
+    Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
+  };
+
   function generatePalette() {
     const count = parseInt(document.getElementById('colorCount').value, 10);
     const mapName = document.getElementById('colormapChoice').value;
     const swatchArea = document.getElementById('paletteSwatches');
+    const previewArea = document.getElementById('colormapPreviews');
+    const listArea = document.getElementById('paletteLists');
     const errorMessage = document.getElementById('errorMessage');
     swatchArea.innerHTML = '';
+    previewArea.innerHTML = '';
+    listArea.innerHTML = '';
     errorMessage.style.display = 'none';
 
     if (isNaN(count) || count < 1 || count > 20) {
@@ -291,23 +312,15 @@
       return;
     }
 
-    const customMaps = {
-      YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84'],
-      BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e'],
-      Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
-    };
+    if (!customMaps[mapName]) {
+      errorMessage.style.display = 'block';
+      errorMessage.innerText = `Invalid colormap: ${mapName}`;
+      return;
+    }
 
     let scale;
     try {
-      if (customMaps[mapName]) {
-        scale = chroma.scale(customMaps[mapName]).mode('lab').colors(count);
-      } else {
-        const validChromaMaps = ['viridis', 'plasma', 'magma', 'cividis'];
-        if (!validChromaMaps.includes(mapName)) {
-          throw new Error(`Invalid colormap: ${mapName}`);
-        }
-        scale = chroma.scale(mapName).mode('lab').colors(count);
-      }
+      scale = chroma.scale(customMaps[mapName]).mode('lab').colors(count);
     } catch (error) {
       console.error(`Error generating palette for ${mapName}:`, error);
       errorMessage.style.display = 'block';
@@ -315,9 +328,14 @@
       return;
     }
 
+    // Generate swatches
+    const hexList = [];
+    const rgbaList = [];
     scale.forEach(hex => {
       const rgb = chroma(hex).rgba();
       const roundedRGB = `rgba(${rgb.map((v, i) => i < 3 ? Math.round(v) : v.toFixed(2)).join(', ')})`;
+      hexList.push(`'${hex}'`);
+      rgbaList.push(`(${rgb.map((v, i) => i < 3 ? Math.round(v) : v.toFixed(2)).join(', ')})`);
 
       const wrapper = document.createElement('div');
       wrapper.style.margin = '10px';
@@ -336,6 +354,22 @@
 
       swatchArea.appendChild(wrapper);
     });
+
+    // Generate gradient preview
+    const previewColors = chroma.scale(customMaps[mapName]).mode('lab').colors(20);
+    const gradientDiv = document.createElement('div');
+    gradientDiv.className = 'gradient-preview';
+    gradientDiv.style.background = `linear-gradient(to right, ${previewColors.join(', ')})`;
+    previewArea.appendChild(gradientDiv);
+
+    const previewLabel = document.createElement('div');
+    previewLabel.style.fontSize = '0.9em';
+    previewLabel.style.marginTop = '5px';
+    previewLabel.innerText = `${mapName} Preview`;
+    previewArea.appendChild(previewLabel);
+
+    // Generate Python-compatible lists
+    listArea.innerHTML = `HEX colors = [${hexList.join(', ')}]\nRGBA colors = [${rgbaList.join(', ')}]`;
   }
 
   function updateGradientPreview() {
@@ -345,15 +379,15 @@
     previewArea.innerHTML = '';
     errorMessage.style.display = 'none';
 
-    const customMaps = {
-      YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84'],
-      BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e'],
-      Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
-    };
+    if (!customMaps[mapName]) {
+      errorMessage.style.display = 'block';
+      errorMessage.innerText = `Invalid colormap: ${mapName}`;
+      return;
+    }
 
     let colors;
     try {
-      colors = customMaps[mapName] ? chroma.scale(customMaps[mapName]).mode('lab').colors(20) : chroma.scale(mapName).mode('lab').colors(20);
+      colors = chroma.scale(customMaps[mapName]).mode('lab').colors(20);
     } catch (error) {
       console.error(`Error generating preview for ${mapName}:`, error);
       errorMessage.style.display = 'block';
@@ -373,35 +407,40 @@
     previewArea.appendChild(label);
   }
 
-  // Initialize preview on load
   document.addEventListener('DOMContentLoaded', updateGradientPreview);
 </script>
 
   
-<!-- Tab 4: Gradient Gallery -->
+<!-- Tab 4: Static Gradient Gallery -->
 <div id="gallery" class="tab">
-  <h2>Gradient Gallery</h2>
+  <h2>Static Gradient Gallery</h2>
   <p class="help-text">
     Smooth gradients for various colormaps, interpolated across 256 steps.
   </p>
-  <div id="gradientGallery" style="margin-top: 20px;"></div>
+  <div id="gradientGallery" style="margin-top: 20px; min-height: 200px;"></div>
   <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
 </div>
 
 <style>
   .gradient-bar {
     width: 100%;
-    max-width: 800px; 
-    height: 40px;
+    max-width: 600px;
+    height: 30px;
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-bottom: 15px;
+    background: transparent;
+    display: block;
   }
   .gradient-label {
     font-weight: bold;
     margin-bottom: 5px;
     font-size: 1em;
-    text-transform: capitalize; 
+    text-transform: capitalize;
+  }
+  #gradientGallery {
+    min-height: 200px;
+    background: transparent;
   }
   @media (max-width: 600px) {
     .gradient-bar {
@@ -411,7 +450,21 @@
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', renderGradientGallery);
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('Tab 4: DOMContentLoaded fired');
+    renderGradientGallery();
+  });
+
+  // Use same customMaps as Tab 3
+  const customMaps = {
+    viridis: ['#440154', '#482475', '#3f4a8a', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'],
+    plasma: ['#0d0887', '#3e049c', '#6300a7', '#8707a6', '#a31895', '#bf2979', '#d8465b', '#eb6a38', '#f7931a', '#f9cb35'],
+    magma: ['#000004', '#160b39', '#3a0c63', '#63197f', '#8a2482', '#b02978', '#d24163', '#ed694b', '#f9943a', '#fcbf49'],
+    cividis: ['#00224e', '#003971', '#1a4e7e', '#37607d', '#55707c', '#72807c', '#8f9082', '#ada38c', '#ccbf9f', '#ede2b4'],
+    YlGnBu: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58', '#0c2c84'],
+    BuGn: ['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#0868ac', '#084081', '#08589e'],
+    Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
+  };
 
   function renderGradientGallery() {
     const container = document.getElementById('gradientGallery');
@@ -419,26 +472,16 @@
     container.innerHTML = '';
     errorMessage.style.display = 'none';
 
-    // Ensure Chroma.js is loaded
     if (typeof chroma === 'undefined') {
-      console.error('Chroma.js is not loaded.');
+      console.error('Tab 4: Chroma.js is not loaded.');
       errorMessage.style.display = 'block';
       errorMessage.innerText = 'Error: Chroma.js library is not loaded.';
       return;
     }
 
-    const colormaps = {
-      viridis: chroma.scale('viridis').mode('lab').colors(50),
-      plasma: chroma.scale('plasma').mode('lab').colors(50),
-      magma: chroma.scale('magma').mode('lab').colors(50),
-      cividis: chroma.scale('cividis').mode('lab').colors(50),
-      YlGnBu: chroma.scale(['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#0c2c84']).mode('lab').colors(50),
-      BuGn: chroma.scale(['#f7fcfd', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#08589e']).mode('lab').colors(50),
-      Spectral: chroma.scale(['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']).mode('lab').colors(50)
-    };
-
-    Object.entries(colormaps).forEach(([name, colors]) => {
+    Object.entries(customMaps).forEach(([name, colors]) => {
       try {
+        console.log(`Tab 4: Rendering gradient for ${name}`);
         const label = document.createElement('div');
         label.innerText = name;
         label.className = 'gradient-label';
@@ -450,7 +493,7 @@
         container.appendChild(label);
         container.appendChild(bar);
       } catch (error) {
-        console.error(`Failed to render gradient for ${name}:`, error);
+        console.error(`Tab 4: Failed to render gradient for ${name}:`, error);
         errorMessage.style.display = 'block';
         errorMessage.innerText = `Error rendering gradient for ${name}.`;
       }
